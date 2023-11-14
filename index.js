@@ -227,28 +227,62 @@ function deleteEmployee (){
   });
 }
 
-// function updateEmployee (){
-//   inquirer.prompt({
-//     type: "input",
-//     message: "which employee would you like to update",
-//     name: "Employee"
-//   },
-//   {
-//     type: "input",
-//     message: "What would you like to update",
-//     name: "updateRole"
-//   })
-//   .then(function(answer){
-//     db.query("UPDATE employee SET = first_name, last_name, role_id, manager_id id = ?,?,?,?", 
-//     [answer.fName, answer.lName, answer.roleID, answer.manID],
-//     function(err, res) {
-//       if (err) throw err;
-//     viewEmployees();
-//     start();
-//   });
-//   });
-// }
+function updateEmployeeRole() {
+  db.query(`SELECT title FROM role`, function (err, results) {
+      if (err) throw err;
+      let empRole = [];
+      results.forEach((role) => {
+          empRole.push(role.title);
+      });  
+
+  db.query(`SELECT CONCAT(first_name, ' ', last_name) as employee FROM employee`, function (err, results) {
+      if (err) throw err;
+      let empName = [];
+      results.forEach((name) => {
+          empName.push(name.employee);
+      });  
+ 
+      inquirer.prompt ([
+          {
+              type: 'list',
+              message: 'Which employee\'s role do you want to update?',
+              choices: empName,
+              name: 'empName'
+          },
+          {
+              type: 'list',
+              message: 'Which role do you want to assign the selected employee?',
+              choices: empRole,
+              name: 'empRole'
+          }
+      ]).then( answer => {
+          db.query(`SELECT id FROM role WHERE title = ?`, answer.empRole, function (err, results) {
+              if (err) throw err;
+              let roleID = results[0].id;
+
+          const empNm = answer.empName.split(' ');
+          db.query(`SELECT id FROM employee WHERE first_name = ? AND last_name = ?`, [empNm[0], empNm[1]], function (err, results) {
+              if (err) throw err;
+              let empID = results[0].id;
+          
+          db.query(
+              `UPDATE employee
+              SET role_id = ?
+              WHERE id = ?`, [roleID, empID], (err, results) => {
+                  if (err) {
+                      console.log(err);
+                  }
+                  console.log(`\nUpdated employee\'s role.\n`);
+                  init();
+                }
+                )
+                })
+                });
+            })
+        })
+    })
+    };
+    
 function quit(){
     process.exit();
 }
-
